@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for, flash
 import os
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
+from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 # Load the environment variables from the .env file
@@ -14,11 +15,16 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flashcards.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 2. INITIALIZATION OF EXTENSIONS (DB)
+# 2. INITIALIZATION OF EXTENSIONS (DB & Login)
 db = SQLAlchemy(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # 3. DATABASE MODELS
 class User(UserMixin, db.Model):
@@ -35,7 +41,6 @@ class User(UserMixin, db.Model):
     current_streak = db.Column(db.Integer, default=0)
     last_study_date = db.Column(db.Date, nullable=True)
 
-
 class Deck(db.Model):
     __tablename__ = 'decks'
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +49,6 @@ class Deck(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     cards = db.relationship('Card', backref='deck', lazy=True, cascade="all, delete-orphan")
-
 
 class Card(db.Model):
     __tablename__ = 'cards'
@@ -59,13 +63,73 @@ class Card(db.Model):
     repetitions = db.Column(db.Integer, default=0)
     interval = db.Column(db.Integer, default=0)
 
-
 # 4. CREATE TABLES
 with app.app_context():
     db.create_all()
 
+# 5. ROUTES
+@app.route('/')
+def home():
+    # If the user is already logged in, send them straight to the dashboard!
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-# 5. RUNNING THE SERVER
+        if User.query.filter_by(email=email).first():
+            flash("You've already signed up with that email, log in instead!")
+            return redirect(url_for('login'))
+
+        hash_and_salted_password = generate_password_hash(
+            password,
+            method='pbkdf2:sha256',
+            salt_length=8
+        )
+
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=hash_and_salted_password
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+        login_user(new_user)
+        return redirect(url_for('dashboard'))
+
+    return render_template("register.html")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash("That email does not exist, please try again.")
+            return redirect(url_for('login'))
+        elif not check_password_hash(user.password_hash, password):
+            flash('Password incorrect, please try again.')
+            return redirect(url_for('login'))
+        else:
+            login_user(user)
+            return redirect(url_for('dashboard'))
+
+    return render_template("login.html")
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+# 6. RUNNING THE SERVER
 if __name__ == "__main__":
     app.run(debug=True)
