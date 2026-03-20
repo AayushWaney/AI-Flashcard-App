@@ -70,7 +70,7 @@ with app.app_context():
 # 5. ROUTES
 @app.route('/')
 def home():
-    # If the user is already logged in, send them straight to the dashboard!
+    # If the user is already logged in, send them straight to the dashboard.
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
@@ -129,6 +129,51 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Fetch all decks belonging to the currently logged-in user
+    user_decks = current_user.decks
+    return render_template('dashboard.html', decks=user_decks)
+
+@app.route('/create_deck', methods=['GET', 'POST'])
+@login_required
+def create_deck():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        new_deck = Deck(title=title, description=description, user_id=current_user.id)
+        db.session.add(new_deck)
+        db.session.commit()
+        flash("Deck created successfully!")
+        return redirect(url_for('dashboard'))
+    return render_template('create_deck.html')
+
+@app.route('/deck/<int:deck_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != current_user.id:
+        flash("You do not have permission to edit this deck.")
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        deck.title = request.form.get('title')
+        deck.description = request.form.get('description')
+        db.session.commit()
+        flash(f"Deck '{deck.title}' updated successfully!")
+        return redirect(url_for('dashboard'))
+    return render_template('edit_deck.html', deck=deck)
+
+@app.route('/deck/<int:deck_id>/delete', methods=['POST'])
+@login_required
+def delete_deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id == current_user.id:
+        db.session.delete(deck)
+        db.session.commit()
+        flash(f"Deck '{deck.title}' has been deleted.")
+    return redirect(url_for('dashboard'))
 
 # 6. RUNNING THE SERVER
 if __name__ == "__main__":

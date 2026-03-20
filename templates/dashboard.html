@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Flashcards{% endblock %}
+
+{% block styles %}
+    body { padding: 40px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header-actions { display: flex; gap: 15px; align-items: center; }
+    .btn-primary { background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; transition: background 0.3s; border: none; cursor: pointer; font-size: 16px; }
+    .btn-primary:hover { background-color: #2980b9; }
+    .logout-btn { background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; transition: background 0.3s, transform 0.2s; }
+    .logout-btn:hover { background-color: #c0392b; transform: translateY(-2px); }
+    .stats-dashboard { background-color: var(--stats-bg); color: var(--stats-text); padding: 25px; border-radius: 12px; display: flex; justify-content: space-around; margin-bottom: 40px; box-shadow: 0 6px 15px var(--shadow-color); transition: background-color 0.3s ease; }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 32px; font-weight: bold; margin-bottom: 5px; color: #3498db; }
+    .stat-label { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+    .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+    .deck-card { background: var(--card-bg); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px var(--shadow-color); transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s; border-top: 5px solid #3498db; }
+    .deck-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px var(--shadow-hover); }
+    .deck-title { font-size: 20px; font-weight: bold; margin: 0 0 10px 0; color: var(--heading-color); }
+    .deck-desc { color: var(--desc-color); font-size: 14px; margin-bottom: 20px; height: 40px; }
+    .deck-actions a { text-decoration: none; color: #3498db; font-weight: bold; font-size: 14px; margin-right: 15px; }
+    .deck-actions a:hover { text-decoration: underline; }
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>Hi, {{ current_user.username }} 👋</h1>
+        <div class="header-actions">
+            <a href="#" onclick="alert('Import CSV feature coming in Day 5!'); return false;" class="btn-primary" style="background-color: #9b59b6;">📥 Import CSV</a>
+            <a href="{{ url_for('create_deck') }}" class="btn-primary">+ New Deck</a>
+            <a href="#" onclick="alert('AI Generator feature coming in Day 7!'); return false;" class="btn-primary" style="background-color: #8e44ad;">✨ AI Generator</a>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="stats-dashboard">
+        <div class="stat-item">
+            <div class="stat-value">{{ current_user.total_reviews }}</div>
+            <div class="stat-label">Total Reviews</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">
+                {% if current_user.total_reviews > 0 %}
+                    {{ ((current_user.correct_reviews / current_user.total_reviews) * 100) | round | int }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ current_user.current_streak }} 🔥</div>
+            <div class="stat-label">Daily Streak</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">
+                {% set ns = namespace(mastered=0) %}
+                {% for deck in decks %}
+                    {% for card in deck.cards %}
+                        {% if card.interval >= 21 %}
+                            {% set ns.mastered = ns.mastered + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {{ ns.mastered }}
+            </div>
+            <div class="stat-label">Cards Mastered</div>
+        </div>
+    </div>
+
+    <div class="deck-grid">
+        {% for deck in decks %}
+            <div class="deck-card">
+                <h3 class="deck-title">{{ deck.title }}</h3>
+                <p class="deck-desc">{{ deck.description or "No description provided." }}</p>
+                <div class="deck-actions" style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <a href="#" onclick="alert('Study feature coming in Day 5!'); return false;">📚 Study Cards</a>
+                    <a href="#" onclick="alert('Card management coming in Day 5!'); return false;">➕ Add Card</a>
+                    <a href="#" onclick="alert('Export feature coming in Day 6!'); return false;" style="color: #9b59b6;">📤 Export</a>
+
+                    <a href="{{ url_for('edit_deck', deck_id=deck.id) }}" style="color: #f39c12;">✏️ Edit Deck</a>
+
+                    <form action="{{ url_for('delete_deck', deck_id=deck.id) }}" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('WARNING: Are you sure you want to delete this deck? All cards inside it will be permanently lost.');">
+                        <button type="submit" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🗑️ Delete</button>
+                    </form>
+
+                    <button type="button" onclick="alert('Reset progress coming in Day 6!');" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🔄 Reset Progress</button>
+                </div>
+            </div>
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--desc-color); margin-top: 50px;">
+                <h2>No decks yet!</h2>
+                <p>Click "+ New Deck" above to start building your study library.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
