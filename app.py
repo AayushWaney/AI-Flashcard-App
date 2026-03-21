@@ -175,6 +175,84 @@ def delete_deck(deck_id):
         flash(f"Deck '{deck.title}' has been deleted.")
     return redirect(url_for('dashboard'))
 
+
+@app.route('/deck/<int:deck_id>')
+@login_required
+def view_deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != current_user.id:
+        flash("Unauthorized access.")
+        return redirect(url_for('dashboard'))
+    # BUG FIX: Passing the cards list to the template
+    return render_template('view_deck.html', deck=deck, cards=deck.cards)
+
+
+@app.route('/deck/<int:deck_id>/add_card', methods=['GET', 'POST'])
+@login_required
+def add_card(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        front = request.form.get('front')
+        back = request.form.get('back')
+        new_card = Card(front=front, back=back, deck_id=deck.id)
+        db.session.add(new_card)
+        db.session.commit()
+        flash("Card added successfully!")
+        return redirect(url_for('view_deck', deck_id=deck.id))
+    return render_template('add_card.html', deck=deck)
+
+
+@app.route('/card/<int:card_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_card(card_id):
+    card = Card.query.get_or_404(card_id)
+    if card.deck.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        card.front = request.form.get('front')
+        card.back = request.form.get('back')
+        db.session.commit()
+        flash("Card updated!")
+        return redirect(url_for('view_deck', deck_id=card.deck_id))
+    return render_template('edit_card.html', card=card)
+
+
+@app.route('/card/<int:card_id>/delete', methods=['POST'])
+@login_required
+def delete_card(card_id):
+    card = Card.query.get_or_404(card_id)
+    deck_id = card.deck_id
+    if card.deck.user_id == current_user.id:
+        db.session.delete(card)
+        db.session.commit()
+        flash("Card deleted.")
+    return redirect(url_for('view_deck', deck_id=deck_id))
+
+
+@app.route('/deck/<int:deck_id>/study')
+@login_required
+def study_session(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    # Fetch cards that are due for review, explicitly ordering by the oldest due date first
+    due_cards = Card.query.filter(
+        Card.deck_id == deck_id,
+        Card.next_review <= datetime.utcnow()
+    ).order_by(Card.next_review.asc()).all()
+
+    if not due_cards:
+        flash("You're all caught up with this deck for now!")
+        return redirect(url_for('view_deck', deck_id=deck.id))
+
+    # BUG FIX: Passing the full list of 'cards' for the JS frontend to consume
+    return render_template('study_session.html', deck=deck, cards=due_cards, total_due=len(due_cards))
+
 # 6. RUNNING THE SERVER
 if __name__ == "__main__":
     app.run(debug=True)

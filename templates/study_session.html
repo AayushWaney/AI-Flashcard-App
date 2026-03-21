@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Study: {{ deck.title }}{% endblock %}
+
+{% block styles %}
+    body { display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 0; overflow: hidden; }
+    
+    .top-bar { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); box-shadow: 0 2px 10px var(--shadow-color); z-index: 10; }
+    .exit-btn { color: var(--desc-color); text-decoration: none; font-weight: bold; font-size: 16px; transition: color 0.2s; }
+    .exit-btn:hover { color: #e74c3c; }
+    .stats { font-weight: bold; color: var(--heading-color); }
+    
+    .progress-container { width: 100%; height: 8px; background-color: var(--shadow-color); }
+    .progress-bar { height: 100%; background-color: #3498db; width: 0%; transition: width 0.4s ease; }
+
+    .study-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+    .scene { width: 100%; max-width: 600px; height: 350px; perspective: 1000px; margin-bottom: 30px; }
+    .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+    .card.is-flipped { transform: rotateX(180deg); } 
+    
+    .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: var(--card-bg); color: var(--heading-color); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow-color); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box; text-align: center; font-size: 24px; }
+    .card-face-front { border-top: 8px solid #3498db; }
+    .card-face-back { transform: rotateX(180deg); border-top: 8px solid #9b59b6; }
+    
+    .hint-text { font-size: 14px; color: var(--desc-color); margin-top: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .controls { display: flex; gap: 15px; width: 100%; max-width: 600px; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .controls.visible { opacity: 1; pointer-events: auto; }
+    
+    .btn-rate { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s, filter 0.2s; display: flex; flex-direction: column; align-items: center; }
+    .btn-rate:hover { filter: brightness(1.1); transform: translateY(-2px); }
+    .btn-rate:active { transform: translateY(0); }
+    .btn-rate small { font-size: 12px; opacity: 0.8; margin-top: 5px; font-weight: normal; }
+    
+    .btn-again { background-color: #e74c3c; }
+    .btn-hard { background-color: #e67e22; }
+    .btn-good { background-color: #3498db; }
+    .btn-easy { background-color: #2ecc71; }
+
+    .completion-screen { display: none; text-align: center; }
+    .completion-screen h2 { font-size: 36px; color: #2ecc71; }
+    .btn-primary { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-top: 20px; }
+{% endblock %}
+
+{% block content %}
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="top-bar" id="topBar">
+        <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="exit-btn">← Exit Session</a>
+        <div class="stats"><span id="currentCardNum">1</span> / <span id="totalCardsNum">?</span> Due</div>
+    </div>
+
+    <div class="study-area">
+        <div class="scene" id="cardScene">
+            <div class="card" id="flashcard" onclick="flipCard()">
+                <div class="card-face card-face-front">
+                    <div id="cardFrontText">Question</div>
+                    <div class="hint-text">Press Space to flip</div>
+                </div>
+                <div class="card-face card-face-back">
+                    <div id="cardBackText">Answer</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls" id="ratingControls">
+            <button class="btn-rate btn-again" onclick="rateCard(1)">Again <small>(Press 1)</small></button>
+            <button class="btn-rate btn-hard" onclick="rateCard(2)">Hard <small>(Press 2)</small></button>
+            <button class="btn-rate btn-good" onclick="rateCard(4)">Good <small>(Press 3)</small></button>
+            <button class="btn-rate btn-easy" onclick="rateCard(5)">Easy <small>(Press 4)</small></button>
+        </div>
+
+        <div class="completion-screen" id="completionScreen">
+            <h2>🎉 Session Complete!</h2>
+            <p>You've reviewed all your due cards for now.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn-primary">Return to Dashboard</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const cards = [
+            {% for card in cards %}
+                { id: {{ card.id }}, front: {{ card.front|tojson }}, back: {{ card.back|tojson }} },
+            {% endfor %}
+        ];
+
+        let currentIndex = 0;
+        let isFlipped = false;
+
+        const flashcardElement = document.getElementById('flashcard');
+        const frontText = document.getElementById('cardFrontText');
+        const backText = document.getElementById('cardBackText');
+        const controls = document.getElementById('ratingControls');
+        const progressBar = document.getElementById('progressBar');
+        const currentCardNum = document.getElementById('currentCardNum');
+        const totalCardsNum = document.getElementById('totalCardsNum');
+        
+        totalCardsNum.innerText = cards.length;
+
+        function loadCard() {
+            if (currentIndex >= cards.length) {
+                showCompletionScreen();
+                return;
+            }
+            isFlipped = false;
+            flashcardElement.classList.remove('is-flipped');
+            controls.classList.remove('visible');
+            frontText.innerText = cards[currentIndex].front;
+            backText.innerText = cards[currentIndex].back;
+            currentCardNum.innerText = currentIndex + 1;
+            progressBar.style.width = `${(currentIndex / cards.length) * 100}%`;
+        }
+
+        function flipCard() {
+            if (currentIndex >= cards.length || isFlipped) return;
+            isFlipped = true;
+            flashcardElement.classList.add('is-flipped');
+            controls.classList.add('visible');
+        }
+
+        function rateCard(quality) {
+            if (!isFlipped) return;
+            const cardId = cards[currentIndex].id;
+            fetch(`/card/${cardId}/rate/${quality}`, { method: 'POST' })
+                .then(() => {
+                    currentIndex++;
+                    loadCard();
+                })
+                .catch(err => console.error("Error saving rating:", err));
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('cardScene').style.display = 'none';
+            controls.style.display = 'none';
+            document.getElementById('topBar').style.display = 'none';
+            progressBar.style.width = '100%';
+            document.getElementById('completionScreen').style.display = 'block';
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (currentIndex >= cards.length) return;
+            if (event.code === 'Space') {
+                event.preventDefault();
+                flipCard();
+            } else if (isFlipped) {
+                if (event.key === '1') rateCard(1);
+                if (event.key === '2') rateCard(2);
+                if (event.key === '3') rateCard(4);
+                if (event.key === '4') rateCard(5);
+            }
+        });
+
+        loadCard();
+    </script>
+{% endblock %}

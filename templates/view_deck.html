@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deck.title }} - Deck Details{% endblock %}
+
+{% block styles %}
+    body { padding: 40px; display: flex; flex-direction: column; align-items: center; }
+    .nav-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .nav-bar a { text-decoration: none; color: #3498db; font-weight: bold; }
+    .nav-bar a:hover { text-decoration: underline; }
+    
+    .deck-header { text-align: center; margin-bottom: 40px; }
+    .deck-header h1 { color: var(--heading-color); font-size: 32px; margin-bottom: 10px; }
+    .deck-header p { color: var(--desc-color); font-size: 16px; }
+    
+    .btn-study { background-color: #2ecc71; color: white; padding: 15px 30px; border-radius: 30px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 20px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); transition: transform 0.2s; }
+    .btn-study:hover { transform: translateY(-2px); }
+    .caught-up { margin-top: 20px; padding: 15px; background-color: rgba(46, 204, 113, 0.1); color: #27ae60; border-radius: 8px; display: inline-block; font-weight: bold; }
+
+    .card-manager { width: 100%; max-width: 800px; padding: 30px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); box-sizing: border-box; }
+    .card-manager h2 { margin-top: 0; color: var(--heading-color); font-size: 22px; }
+    .card-manager p { color: var(--desc-color); font-size: 14px; margin-bottom: 25px; }
+    
+    .card-row { border: 1px solid var(--shadow-color); padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); margin-bottom: 15px; }
+    .card-text strong { display: block; color: var(--heading-color); margin-bottom: 8px; font-size: 16px; }
+    .card-text span { color: var(--desc-color); font-size: 15px; }
+    
+    .card-actions { display: flex; gap: 10px; }
+    .btn-edit { background: #f39c12; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; transition: background 0.2s; }
+    .btn-delete { background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+{% endblock %}
+
+{% block content %}
+    <div class="nav-bar">
+        <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+        <a href="{{ url_for('add_card', deck_id=deck.id) }}">+ Add New Card</a>
+    </div>
+
+    <div class="deck-header">
+        <h1>{{ deck.title }}</h1>
+        <p>{{ deck.description or "No description provided." }}</p>
+        
+        {% if cards|length > 0 %}
+            <a href="{{ url_for('study_session', deck_id=deck.id) }}" class="btn-study">
+                ▶ Start Study Session ({{ cards|length }} Due)
+            </a>
+        {% else %}
+            <div class="caught-up">
+                🎉 All caught up! No cards due right now.
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 15px;">
+            <button onclick="alert('AI Overview feature coming soon!');" style="color: #8e44ad; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: rgba(142, 68, 173, 0.1); padding: 10px 20px; border-radius: 20px; transition: background 0.2s; font-size: 15px; border: none; cursor: pointer;">
+                ✨ Generate AI Overview
+            </button>
+        </div>
+    </div>
+
+    <hr style="width: 100%; max-width: 800px; margin: 20px 0 40px 0; border: 0; border-top: 2px solid var(--shadow-color);">
+
+    <div class="card-manager">
+        <h2>🗂️ All Cards in Deck ({{ deck.cards|length }})</h2>
+        <p>Manage all cards here. Hit the green button above to study the ones due today.</p>
+
+        <div>
+            {% for card in deck.cards %}
+                <div class="card-row">
+                    <div class="card-text" style="flex: 1; padding-right: 20px;">
+                        <strong>Q: {{ card.front[:80] }}{% if card.front|length > 80 %}...{% endif %}</strong>
+                        <span>A: {{ card.back[:80] }}{% if card.back|length > 80 %}...{% endif %}</span>
+                    </div>
+
+                    <div class="card-actions">
+                        <button type="button" onclick="alert('AI Improve feature coming soon!');" style="background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 5px;" title="Make question clearer and answer concise">
+                            ✨ AI Improve
+                        </button>
+
+                        <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn-edit">✏️ Edit</a>
+
+                        <form action="{{ url_for('delete_card', card_id=card.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this card permanently?');">
+                            <button type="submit" class="btn-delete">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 40px 0;">
+                    <p style="color: var(--desc-color); font-style: italic; font-size: 16px;">No cards in this deck yet. Click "+ Add New Card" above to get started!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
