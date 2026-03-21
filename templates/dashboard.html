@@ -27,9 +27,9 @@
     <div class="header">
         <h1>Hi, {{ current_user.username }} 👋</h1>
         <div class="header-actions">
-            <a href="#" onclick="alert('Import CSV feature coming in Day 5!'); return false;" class="btn-primary" style="background-color: #9b59b6;">📥 Import CSV</a>
+            <a href="#" onclick="alert('Import CSV feature coming soon!'); return false;" class="btn-primary" style="background-color: #9b59b6;">📥 Import CSV</a>
             <a href="{{ url_for('create_deck') }}" class="btn-primary">+ New Deck</a>
-            <a href="#" onclick="alert('AI Generator feature coming in Day 7!'); return false;" class="btn-primary" style="background-color: #8e44ad;">✨ AI Generator</a>
+            <a href="#" onclick="alert('AI Generator feature coming soon!'); return false;" class="btn-primary" style="background-color: #8e44ad;">✨ AI Generator</a>
             <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
         </div>
     </div>
@@ -77,7 +77,7 @@
                 <div class="deck-actions" style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <a href="{{ url_for('view_deck', deck_id=deck.id) }}">📚 Study Cards</a>
                     <a href="{{ url_for('add_card', deck_id=deck.id) }}">➕ Add Card</a>
-                    <a href="#" onclick="alert('Export feature coming in Day 6!'); return false;" style="color: #9b59b6;">📤 Export</a>
+                    <a href="#" onclick="alert('Export feature coming in soon!'); return false;" style="color: #9b59b6;">📤 Export</a>
 
                     <a href="{{ url_for('edit_deck', deck_id=deck.id) }}" style="color: #f39c12;">✏️ Edit Deck</a>
 
@@ -85,7 +85,7 @@
                         <button type="submit" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🗑️ Delete</button>
                     </form>
 
-                    <button type="button" onclick="alert('Reset progress coming in Day 6!');" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🔄 Reset Progress</button>
+                    <button type="button" onclick="alert('Reset progress coming in soon!');" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🔄 Reset Progress</button>
                 </div>
             </div>
         {% else %}
