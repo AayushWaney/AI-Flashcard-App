@@ -85,7 +85,9 @@
                         <button type="submit" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🗑️ Delete</button>
                     </form>
 
-                    <button type="button" onclick="alert('Reset progress coming in soon!');" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🔄 Reset Progress</button>
+                    <form action="{{ url_for('reset_deck', deck_id=deck.id) }}" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Are you sure you want to completely reset your study progress for this deck?');">
+                        <button type="submit" style="background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 14px; padding: 0; transition: color 0.2s;">🔄 Reset Progress</button>
+                    </form>
                 </div>
             </div>
         {% else %}

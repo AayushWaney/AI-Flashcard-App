@@ -3,157 +3,74 @@
 {% block title %}Study: {{ deck.title }}{% endblock %}
 
 {% block styles %}
-    body { display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 0; overflow: hidden; }
-    
-    .top-bar { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); box-shadow: 0 2px 10px var(--shadow-color); z-index: 10; }
-    .exit-btn { color: var(--desc-color); text-decoration: none; font-weight: bold; font-size: 16px; transition: color 0.2s; }
-    .exit-btn:hover { color: #e74c3c; }
-    .stats { font-weight: bold; color: var(--heading-color); }
-    
-    .progress-container { width: 100%; height: 8px; background-color: var(--shadow-color); }
-    .progress-bar { height: 100%; background-color: #3498db; width: 0%; transition: width 0.4s ease; }
+    body { padding: 40px; display: flex; flex-direction: column; align-items: center; background-color: var(--bg-color); }
+    .study-container { width: 100%; max-width: 600px; text-align: center; }
+    .progress-tracker { font-size: 15px; color: var(--desc-color); margin-bottom: 25px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-    .study-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
-    .scene { width: 100%; max-width: 600px; height: 350px; perspective: 1000px; margin-bottom: 30px; }
-    .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
-    .card.is-flipped { transform: rotateX(180deg); } 
-    
-    .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: var(--card-bg); color: var(--heading-color); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow-color); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box; text-align: center; font-size: 24px; }
-    .card-face-front { border-top: 8px solid #3498db; }
-    .card-face-back { transform: rotateX(180deg); border-top: 8px solid #9b59b6; }
-    
-    .hint-text { font-size: 14px; color: var(--desc-color); margin-top: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .flashcard { background: var(--card-bg); padding: 50px 40px; border-radius: 16px; box-shadow: 0 10px 30px var(--shadow-color); margin-bottom: 40px; min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: transform 0.3s ease; border-top: 6px solid #3498db; }
+    .flashcard-text { font-size: 26px; color: var(--heading-color); line-height: 1.4; }
 
-    .controls { display: flex; gap: 15px; width: 100%; max-width: 600px; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-    .controls.visible { opacity: 1; pointer-events: auto; }
-    
-    .btn-rate { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s, filter 0.2s; display: flex; flex-direction: column; align-items: center; }
-    .btn-rate:hover { filter: brightness(1.1); transform: translateY(-2px); }
-    .btn-rate:active { transform: translateY(0); }
-    .btn-rate small { font-size: 12px; opacity: 0.8; margin-top: 5px; font-weight: normal; }
-    
-    .btn-again { background-color: #e74c3c; }
-    .btn-hard { background-color: #e67e22; }
-    .btn-good { background-color: #3498db; }
-    .btn-easy { background-color: #2ecc71; }
+    .card-divider { width: 100%; border: 0; border-top: 2px dashed var(--shadow-color); margin: 30px 0; display: none; }
+    .card-back { display: none; color: #27ae60; font-weight: bold; }
 
-    .completion-screen { display: none; text-align: center; }
-    .completion-screen h2 { font-size: 36px; color: #2ecc71; }
-    .btn-primary { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-top: 20px; }
+    .btn-show { background: #3498db; color: white; border: none; padding: 18px 40px; font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.3s, transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); }
+    .btn-show:hover { background: #2980b9; transform: translateY(-2px); }
+
+    .rating-container { display: none; gap: 15px; justify-content: center; flex-wrap: wrap; }
+    .btn-rate { flex: 1; min-width: 120px; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: transform 0.1s, filter 0.2s; box-shadow: 0 4px 10px var(--shadow-color); }
+    .btn-rate:hover { filter: brightness(1.1); }
+    .btn-rate:active { transform: scale(0.95); }
+
+    .rate-again { background: #e74c3c; } /* 0: Reset */
+    .rate-hard { background: #e67e22; }  /* 1: Hard */
+    .rate-good { background: #3498db; }  /* 2: Good */
+    .rate-easy { background: #2ecc71; }  /* 3: Easy */
 {% endblock %}
 
 {% block content %}
-    <div class="progress-container">
-        <div class="progress-bar" id="progressBar"></div>
+<div class="study-container">
+    <div style="text-align: left; margin-bottom: 30px;">
+        <a href="{{ url_for('view_deck', deck_id=deck.id) }}" style="text-decoration: none; color: #3498db; font-weight: bold; font-size: 16px;">← Back to Deck Details</a>
     </div>
 
-    <div class="top-bar" id="topBar">
-        <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="exit-btn">← Exit Session</a>
-        <div class="stats"><span id="currentCardNum">1</span> / <span id="totalCardsNum">?</span> Due</div>
+    <h2 style="color: var(--heading-color); margin-bottom: 5px; font-size: 28px;">{{ deck.title }}</h2>
+    <div class="progress-tracker">
+        Card 1 of {{ total_due }} due today
     </div>
 
-    <div class="study-area">
-        <div class="scene" id="cardScene">
-            <div class="card" id="flashcard" onclick="flipCard()">
-                <div class="card-face card-face-front">
-                    <div id="cardFrontText">Question</div>
-                    <div class="hint-text">Press Space to flip</div>
-                </div>
-                <div class="card-face card-face-back">
-                    <div id="cardBackText">Answer</div>
-                </div>
-            </div>
-        </div>
+    <div class="flashcard">
+        <div class="flashcard-text" id="front-text">{{ card.front }}</div>
 
-        <div class="controls" id="ratingControls">
-            <button class="btn-rate btn-again" onclick="rateCard(1)">Again <small>(Press 1)</small></button>
-            <button class="btn-rate btn-hard" onclick="rateCard(2)">Hard <small>(Press 2)</small></button>
-            <button class="btn-rate btn-good" onclick="rateCard(4)">Good <small>(Press 3)</small></button>
-            <button class="btn-rate btn-easy" onclick="rateCard(5)">Easy <small>(Press 4)</small></button>
-        </div>
+        <hr class="card-divider" id="divider">
 
-        <div class="completion-screen" id="completionScreen">
-            <h2>🎉 Session Complete!</h2>
-            <p>You've reviewed all your due cards for now.</p>
-            <a href="{{ url_for('dashboard') }}" class="btn-primary">Return to Dashboard</a>
-        </div>
+        <div class="flashcard-text card-back" id="back-text">{{ card.back }}</div>
     </div>
-{% endblock %}
 
-{% block scripts %}
-    <script>
-        const cards = [
-            {% for card in cards %}
-                { id: {{ card.id }}, front: {{ card.front|tojson }}, back: {{ card.back|tojson }} },
-            {% endfor %}
-        ];
+    <button id="show-answer-btn" class="btn-show" onclick="revealAnswer()">👀 Show Answer</button>
 
-        let currentIndex = 0;
-        let isFlipped = false;
+    <form action="{{ url_for('rate_card', card_id=card.id) }}" method="POST" id="rating-form" class="rating-container">
+        <button type="submit" name="rating" value="0" class="btn-rate rate-again">
+            Again<br><span style="font-size: 12px; font-weight: normal; opacity: 0.8;">&lt; 1m</span>
+        </button>
+        <button type="submit" name="rating" value="1" class="btn-rate rate-hard">
+            Hard<br><span style="font-size: 12px; font-weight: normal; opacity: 0.8;">Soon</span>
+        </button>
+        <button type="submit" name="rating" value="2" class="btn-rate rate-good">
+            Good<br><span style="font-size: 12px; font-weight: normal; opacity: 0.8;">Standard</span>
+        </button>
+        <button type="submit" name="rating" value="3" class="btn-rate rate-easy">
+            Easy<br><span style="font-size: 12px; font-weight: normal; opacity: 0.8;">Later</span>
+        </button>
+    </form>
+</div>
 
-        const flashcardElement = document.getElementById('flashcard');
-        const frontText = document.getElementById('cardFrontText');
-        const backText = document.getElementById('cardBackText');
-        const controls = document.getElementById('ratingControls');
-        const progressBar = document.getElementById('progressBar');
-        const currentCardNum = document.getElementById('currentCardNum');
-        const totalCardsNum = document.getElementById('totalCardsNum');
-        
-        totalCardsNum.innerText = cards.length;
-
-        function loadCard() {
-            if (currentIndex >= cards.length) {
-                showCompletionScreen();
-                return;
-            }
-            isFlipped = false;
-            flashcardElement.classList.remove('is-flipped');
-            controls.classList.remove('visible');
-            frontText.innerText = cards[currentIndex].front;
-            backText.innerText = cards[currentIndex].back;
-            currentCardNum.innerText = currentIndex + 1;
-            progressBar.style.width = `${(currentIndex / cards.length) * 100}%`;
-        }
-
-        function flipCard() {
-            if (currentIndex >= cards.length || isFlipped) return;
-            isFlipped = true;
-            flashcardElement.classList.add('is-flipped');
-            controls.classList.add('visible');
-        }
-
-        function rateCard(quality) {
-            if (!isFlipped) return;
-            const cardId = cards[currentIndex].id;
-            fetch(`/card/${cardId}/rate/${quality}`, { method: 'POST' })
-                .then(() => {
-                    currentIndex++;
-                    loadCard();
-                })
-                .catch(err => console.error("Error saving rating:", err));
-        }
-
-        function showCompletionScreen() {
-            document.getElementById('cardScene').style.display = 'none';
-            controls.style.display = 'none';
-            document.getElementById('topBar').style.display = 'none';
-            progressBar.style.width = '100%';
-            document.getElementById('completionScreen').style.display = 'block';
-        }
-
-        document.addEventListener('keydown', (event) => {
-            if (currentIndex >= cards.length) return;
-            if (event.code === 'Space') {
-                event.preventDefault();
-                flipCard();
-            } else if (isFlipped) {
-                if (event.key === '1') rateCard(1);
-                if (event.key === '2') rateCard(2);
-                if (event.key === '3') rateCard(4);
-                if (event.key === '4') rateCard(5);
-            }
-        });
-
-        loadCard();
-    </script>
+<script>
+    // Simple JavaScript to handle the card flip logic without reloading the page
+    function revealAnswer() {
+        document.getElementById('show-answer-btn').style.display = 'none';
+        document.getElementById('divider').style.display = 'block';
+        document.getElementById('back-text').style.display = 'block';
+        document.getElementById('rating-form').style.display = 'flex';
+    }
+</script>
 {% endblock %}

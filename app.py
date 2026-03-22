@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Load the environment variables from the .env file
 load_dotenv()
@@ -252,6 +252,63 @@ def study_session(deck_id):
 
     # BUG FIX: Passing the full list of 'cards' for the JS frontend to consume
     return render_template('study_session.html', deck=deck, cards=due_cards, total_due=len(due_cards))
+
+
+@app.route('/card/<int:card_id>/rate', methods=['POST'])
+@login_required
+def rate_card(card_id):
+    card = Card.query.get_or_404(card_id)
+    if card.deck.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+
+    # Get the rating from the study session form (0=Again, 1=Hard, 2=Good, 3=Easy)
+    rating = request.form.get('rating', type=int)
+
+    # SM-2 ALGORITHM LOGIC
+    if rating == 0:
+        card.repetitions = 0
+        card.interval = 1
+    else:
+        if card.repetitions == 0:
+            card.interval = 1
+        elif card.repetitions == 1:
+            card.interval = 6
+        else:
+            card.interval = round(card.interval * card.ease_factor)
+
+        card.repetitions += 1
+
+    # Update the ease factor based on the rating
+    card.ease_factor = card.ease_factor + (0.1 - (3 - rating) * (0.08 + (3 - rating) * 0.02))
+    if card.ease_factor < 1.3:
+        card.ease_factor = 1.3
+
+    # Set the next review date
+    card.next_review = datetime.utcnow() + timedelta(days=card.interval)
+
+    # Update user statistics
+    current_user.total_reviews += 1
+    if rating > 0:
+        current_user.correct_reviews += 1
+
+    db.session.commit()
+
+    return redirect(url_for('study_session', deck_id=card.deck_id))
+
+
+@app.route('/deck/<int:deck_id>/reset', methods=['POST'])
+@login_required
+def reset_deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id == current_user.id:
+        for card in deck.cards:
+            card.next_review = datetime.utcnow()
+            card.ease_factor = 2.5
+            card.repetitions = 0
+            card.interval = 0
+        db.session.commit()
+        flash(f"Progress for '{deck.title}' has been reset.")
+    return redirect(url_for('dashboard'))
 
 # 6. RUNNING THE SERVER
 if __name__ == "__main__":
