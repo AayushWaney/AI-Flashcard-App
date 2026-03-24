@@ -19,7 +19,20 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flashcards.db'
+
+# RENDER POSTGRESQL
+
+db_url = os.environ.get('DATABASE_URL')
+
+if db_url:
+
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+else:
+    # If no URL is found, fallback to local SQLite for testing on your Mac
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flashcards.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize Gemini AI Client

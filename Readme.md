@@ -12,7 +12,9 @@ This project explores the intersection of AI-assisted knowledge extraction and a
 
 ## 🎥 Demo
 
-![Demo GIF](screenshots/demo.gif) *(Note: Demo will be added later)*
+**🌍 [View Live AI Flashcard App Here](https://ai-flashcard-app-37ab.onrender.com/)**
+
+![Demo GIF](screenshots/demo.gif) 
 
 ---
 
@@ -73,18 +75,18 @@ The system is designed for single-user or small-scale deployment, prioritizing c
 ---
 
 ## 📸 Screenshots
-*(Screenshots will be added later)*
+
 ### 1. Dashboard & Statistics
 *(Featuring the dynamic statistics board and persistent dark mode UI)*
-![Dashboard Screenshot](screenshots/dashboard.png)
+![Dashboard Screenshot](screenshots/screenshot1.png)
 
 ### 2. Interactive Study Session
 *(Distraction-free mode with 3D flip animations and algorithmic rating controls)*
-![Study Screenshot](screenshots/study_session.png)
+![Study Screenshot](screenshots/screenshot2.gif)
 
 ### 3. AI Generation & Summaries
 *(PDF processing UI and the Gemini-generated HTML deck summaries)*
-![AI Screenshot](screenshots/ai_features.png)
+![AI Screenshot](screenshots/screenshot3.gif)
 
 ---
 
