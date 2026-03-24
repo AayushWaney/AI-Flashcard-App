@@ -12,9 +12,9 @@
     perspective: 1000px;
     width: 100%;
     max-width: 600px;
-    /* Reduce height slightly to give buttons room */
+
     height: 300px;
-    /* Add a solid margin at the bottom to push buttons down */
+
     margin: 2rem auto 3rem auto;
   }
 
@@ -48,7 +48,7 @@
         box-sizing: border-box;
     }
 
-    /* The back face needs to be pre-rotated */
+
     .card-back {
         transform: rotateY(180deg);
         border-top: 6px solid #27ae60;
@@ -56,7 +56,7 @@
 
     .flashcard-text { font-size: 26px; color: var(--heading-color); line-height: 1.4; }
 
-    /* --- BUTTONS --- */
+    /* BUTTONS */
     .btn-show { background: #3498db; color: white; border: none; padding: 18px 40px; font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.3s, transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); margin-top: 30px; }
     .btn-show:hover { background: #2980b9; transform: translateY(-2px); }
 
@@ -71,8 +71,7 @@
   }
     .btn-rate {
     flex: 1;
-    min-width: 100px; /* Reduced slightly so they fit better on mobile */
-    /* Increased top/bottom padding to give the two lines of text room to breathe */
+    min-width: 100px;
     padding: 12px 10px;
     border: none;
     border-radius: 10px;
@@ -82,11 +81,9 @@
     color: white;
     transition: transform 0.1s, filter 0.2s;
     box-shadow: 0 4px 10px var(--shadow-color);
-    /* Add line-height to space out the main word and the sub-text */
     line-height: 1.4;
   }
     /* CUSTOM SCROLLBAR */
-    /* Target the scrollbar itself */
     .card-face::-webkit-scrollbar {
         width: 8px;
     }

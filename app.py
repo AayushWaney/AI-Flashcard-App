@@ -49,7 +49,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    decks = db.relationship('Deck', backref='owner', lazy=True)
+    decks = db.relationship('Deck', backref='owner', lazy=True, cascade="all, delete-orphan")
 
     # New Study Statistics Columns
     total_reviews = db.Column(db.Integer, default=0)
@@ -63,12 +63,12 @@ class Deck(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     cards = db.relationship('Card', backref='deck', lazy=True, cascade="all, delete-orphan")
 
 
-# UPDATED CARD MODEL
+
 class Card(db.Model):
     __tablename__ = 'cards'
     id = db.Column(db.Integer, primary_key=True)
@@ -77,7 +77,7 @@ class Card(db.Model):
     deck_id = db.Column(db.Integer, db.ForeignKey('decks.id'), nullable=False)
 
     # New Spaced Repetition Columns
-    next_review = db.Column(db.DateTime, default=datetime)
+    next_review = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     ease_factor = db.Column(db.Float, default=2.5)
     repetitions = db.Column(db.Integer, default=0)
     interval = db.Column(db.Integer, default=0)  # Days until next review
@@ -95,7 +95,7 @@ with app.app_context():
 
 @app.route('/')
 def home():
-    # If the user is already logged in, send them straight to the dashboard!
+    # If the user is already logged in, send them straight to the dashboard.
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
@@ -156,7 +156,7 @@ def login():
 @login_required
 def dashboard():
     # Fetch all decks belonging to the currently logged-in user
-    # This works beautifully because of the db.relationship we set up!
+
     user_decks = current_user.decks
     return render_template('dashboard.html', decks=user_decks)
 
@@ -188,13 +188,14 @@ def view_deck(deck_id):
         flash("You do not have permission to view this deck.", "danger")
         return redirect(url_for('dashboard'))
 
-    # Only fetch cards where the next_review date is today or in the past!
+    # Only fetch cards due for review to power the Study button count
     now = datetime.now(timezone.utc)
-    active_cards = Card.query.filter(Card.deck_id == deck.id, Card.next_review <= now).all()
+    due_cards = Card.query.filter(Card.deck_id == deck.id, Card.next_review <= now).all()
+    # Pass 'due_cards' to the template.
+    # The bottom list can keep using 'deck.cards' automatically.
+    return render_template('view_deck.html', deck=deck, cards=due_cards)
 
-    return render_template('view_deck.html', deck=deck, cards=active_cards)
-
-# --- STUDY SESSION ROUTE ---
+# STUDY SESSION ROUTE
 @app.route('/deck/<int:deck_id>/study')
 @login_required
 def study_session(deck_id):
@@ -222,7 +223,7 @@ def study_session(deck_id):
     return render_template('study_session.html', deck=deck, card=current_card_to_study, total_due=total_due)
 
 
-# --- RATE CARD ROUTE ---
+# RATE CARD ROUTE
 @app.route('/card/<int:card_id>/rate', methods=['POST'])
 @login_required
 def rate_card(card_id):
@@ -234,7 +235,7 @@ def rate_card(card_id):
     # 1. Grab the rating from the HTML form buttons (0=Again, 1=Hard, 2=Good, 3=Easy)
     rating = request.form.get('rating', type=int)
 
-    # SAFETY NET: If the browser failed to send the rating, stop here before the math crashes
+    # If the browser failed to send the rating, stop here before the math crashes
     if rating is None:
         flash("Something went wrong with that button click. Please try again.", "warning")
         return redirect(url_for('study_session', deck_id=card.deck_id))
@@ -259,7 +260,7 @@ def rate_card(card_id):
 
     card.next_review = datetime.now(timezone.utc) + timedelta(days=card.interval)
 
-    # 3. --- STATS & STREAK LOGIC ---
+    # 3. STATS & STREAK LOGIC
     user = current_user
     user.total_reviews += 1
 
@@ -268,15 +269,15 @@ def rate_card(card_id):
         user.correct_reviews += 1
 
     # Streak Logic: Check if they studied today or yesterday
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     if user.last_study_date != today:
         if user.last_study_date == today - timedelta(days=1):
-            user.current_streak += 1  # Continued streak!
+            user.current_streak += 1  # Continued streak
         else:
             user.current_streak = 1  # Broke the streak, reset to 1
         user.last_study_date = today
 
-    # ONLY ONE COMMIT AND ONE RETURN AT THE VERY END
+
     db.session.commit()
     return redirect(url_for('study_session', deck_id=card.deck_id))
 
@@ -305,7 +306,7 @@ def add_card(deck_id):
     return render_template('add_card.html', deck=deck)
 
 
-# --- EXPORT ROUTE ---
+# EXPORT ROUTE
 @app.route('/export/<int:deck_id>')
 @login_required
 def export_deck(deck_id):
@@ -313,7 +314,7 @@ def export_deck(deck_id):
     if deck.user_id != current_user.id:
         return redirect(url_for('dashboard'))
 
-    # Create an in-memory string to hold our CSV data
+
     si = StringIO()
     cw = csv.writer(si)
 
@@ -332,7 +333,7 @@ def export_deck(deck_id):
     return output
 
 
-# --- IMPORT ROUTE ---
+# IMPORT ROUTE
 @app.route('/import', methods=['GET', 'POST'])
 @login_required
 def import_deck():
@@ -375,7 +376,7 @@ def import_deck():
     return render_template('import_deck.html')
 
 
-# --- RESET DECK ROUTE ---
+# RESET DECK ROUTE
 @app.route('/reset_deck/<int:deck_id>', methods=['POST'])
 @login_required
 def reset_deck(deck_id):
@@ -399,7 +400,7 @@ def reset_deck(deck_id):
     return redirect(url_for('dashboard'))
 
 
-# --- EDIT DECK ROUTE ---
+# EDIT DECK ROUTE
 @app.route('/deck/<int:deck_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_deck(deck_id):
@@ -420,7 +421,7 @@ def edit_deck(deck_id):
     return render_template('edit_deck.html', deck=deck)
 
 
-# --- DELETE DECK ROUTE ---
+# DELETE DECK ROUTE
 @app.route('/deck/<int:deck_id>/delete', methods=['POST'])
 @login_required
 def delete_deck(deck_id):
@@ -428,8 +429,8 @@ def delete_deck(deck_id):
 
     # Security check
     if deck.user_id == current_user.id:
-        # Because we set cascade="all, delete-orphan" in our Deck model,
-        # deleting the deck automatically deletes all its cards too!
+
+
         db.session.delete(deck)
         db.session.commit()
         flash(f"Deck '{deck.title}' has been deleted.", "success")
@@ -437,7 +438,7 @@ def delete_deck(deck_id):
     return redirect(url_for('dashboard'))
 
 
-# --- EDIT CARD ROUTE ---
+# EDIT CARD ROUTE
 @app.route('/card/<int:card_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_card(card_id):
@@ -459,7 +460,7 @@ def edit_card(card_id):
     return render_template('edit_card.html', card=card)
 
 
-# --- DELETE CARD ROUTE ---
+# DELETE CARD ROUTE
 @app.route('/card/<int:card_id>/delete', methods=['POST'])
 @login_required
 def delete_card(card_id):
@@ -475,7 +476,7 @@ def delete_card(card_id):
     return redirect(url_for('view_deck', deck_id=deck_id))
 
 
-# --- AI IMPROVE CARD ROUTE ---
+# AI IMPROVE CARD ROUTE
 @app.route('/card/<int:card_id>/improve_ai', methods=['POST'])
 @login_required
 def improve_card_ai(card_id):
@@ -527,7 +528,7 @@ def improve_card_ai(card_id):
     return redirect(url_for('view_deck', deck_id=card.deck_id))
 
 
-# --- AI DECK SUMMARY ROUTE ---
+# AI DECK SUMMARY ROUTE
 @app.route('/deck/<int:deck_id>/summary', methods=['GET'])
 @login_required
 def summarize_deck_ai(deck_id):
@@ -550,7 +551,7 @@ def summarize_deck_ai(deck_id):
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
 
-        # We specifically ask Gemini to return raw HTML so we can render it beautifully
+        # ask Gemini to return raw HTML so we can render it
         prompt = f"""
         You are an expert tutor. I will provide you with a list of flashcards from a deck titled "{deck.title}".
         Please provide a concise, high-level summary of the key concepts covered in this deck.
@@ -564,7 +565,7 @@ def summarize_deck_ai(deck_id):
         response = model.generate_content(prompt)
         summary_html = response.text.strip()
 
-        # We pass the generated HTML directly to a new template
+        # pass the generated HTML directly to a new template
         return render_template('deck_summary.html', deck=deck, summary=summary_html)
 
     except Exception as e:
@@ -572,16 +573,15 @@ def summarize_deck_ai(deck_id):
         return redirect(url_for('view_deck', deck_id=deck.id))
 
 
-# --- AI FLASHCARD GENERATOR ROUTE ---
+# AI FLASHCARD GENERATOR ROUTE
 @app.route('/generate_ai', methods=['GET', 'POST'])
 @login_required
 def generate_ai_cards():
     if request.method == 'GET':
-        # We need to pass the user's decks to the dropdown menu!
+        # need to pass the user's decks to the dropdown menu
         decks = Deck.query.filter_by(user_id=current_user.id).all()
         return render_template('generate_ai.html', decks=decks)
 
-    # --- PROCESS THE POST REQUEST ---
     deck_id = request.form.get('deck_id')
     notes = request.form.get('notes', '').strip()
     pdf_file = request.files.get('pdf_file')
@@ -620,7 +620,7 @@ def generate_ai_cards():
 
     # 3. Send the text to Gemini
     try:
-        # We use flash because it is lightning fast and perfect for text tasks
+        # Use flash because it is lightning fast and perfect for text tasks
         model = genai.GenerativeModel('gemini-2.5-flash')
 
         prompt = f"""
@@ -671,9 +671,9 @@ def generate_ai_cards():
         return redirect(request.url)
 
 
-# ==========================================
+
 # REST API ENDPOINTS
-# ==========================================
+
 
 # 1. GET ALL DECKS
 @app.route('/api/decks', methods=['GET'])
@@ -740,8 +740,8 @@ def logout():
     return redirect(url_for('home'))
 
 
-# ==========================================
+
 # 6. RUN THE SERVER
-# ==========================================
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -23,7 +23,28 @@
     .card-row { border: 1px solid var(--shadow-color); padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); margin-bottom: 15px; }
     .card-text strong { display: block; color: var(--heading-color); margin-bottom: 8px; font-size: 16px; }
     .card-text span { color: var(--desc-color); font-size: 15px; }
-    
+
+    .card-text strong, .card-text span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Shows exactly 2 lines then truncates */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    }
+    @media (max-width: 600px) {
+    .card-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .card-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap; /* Allows buttons to wrap to a new line if needed */
+    }
+
+}
+
     .card-actions { display: flex; gap: 10px; }
     .btn-edit { background: #f39c12; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; transition: background 0.2s; }
     .btn-delete { background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: background 0.2s; }
@@ -66,8 +87,8 @@
             {% for card in deck.cards %}
                 <div class="card-row">
                     <div class="card-text" style="flex: 1; padding-right: 20px;">
-                        <strong>Q: {{ card.front[:80] }}{% if card.front|length > 80 %}...{% endif %}</strong>
-                        <span>A: {{ card.back[:80] }}{% if card.back|length > 80 %}...{% endif %}</span>
+                        <strong>Q: {{ card.front }}</strong>
+                        <span>A: {{ card.back }}</span>
                     </div>
 
                     <div class="card-actions">
