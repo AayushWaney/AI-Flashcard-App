@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    # This automatically pulls your Gemini and Secret keys from your existing .env file!
+    env_file:
+      - .env
+    volumes:
+      # This maps your database file so your flashcards aren't deleted if the container restarts
+      - ./instance:/app/instance
+      - ./flashcards.db:/app/flashcards.db

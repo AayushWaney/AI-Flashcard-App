@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Summary: {{ deck.title }}{% endblock %}
+
+{% block styles %}
+    body { display: flex; flex-direction: column; align-items: center; padding: 40px; }
+    
+    .summary-container { width: 100%; max-width: 800px; padding: 40px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); line-height: 1.6; }
+    .summary-container h1 { color: #8e44ad; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 28px; }
+    
+    .summary-content { color: var(--text-color); font-size: 16px; margin-top: 20px; }
+    .summary-content h3 { color: var(--heading-color); margin-top: 25px; border-bottom: 2px solid var(--shadow-color); padding-bottom: 5px; }
+    .summary-content ul { padding-left: 20px; }
+    .summary-content li { margin-bottom: 10px; }
+    
+    .back-link { display: inline-block; margin-top: 30px; text-decoration: none; color: #3498db; font-weight: bold; transition: color 0.2s; }
+    .back-link:hover { color: #2980b9; }
+{% endblock %}
+
+{% block content %}
+    <div class="summary-container">
+        <h1>✨ AI Deck Summary: {{ deck.title }}</h1>
+        <p style="color: var(--desc-color); margin-bottom: 30px; font-style: italic;">Gemini analyzed your {{ deck.cards|length }} cards and extracted these core concepts:</p>
+        
+        <div class="summary-content">
+            {{ summary | safe }}
+        </div>
+        
+        <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="back-link">← Back to Deck</a>
+    </div>
+{% endblock %}

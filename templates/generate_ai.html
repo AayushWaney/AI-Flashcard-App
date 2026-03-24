@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Flashcard Generator - Flashcard App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #2c3e50;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .form-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+        h1 { margin-top: 0; margin-bottom: 5px; font-size: 28px; text-align: center; color: #8e44ad; }
+        p.subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { font-weight: bold; font-size: 14px; color: #7f8c8d; display: block; margin-bottom: 8px; }
+        textarea, input[type="file"], select {
+            width: 100%; padding: 12px; border: 1px solid #dcdde1; border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        }
+        textarea { resize: vertical; min-height: 120px; }
+        .btn-magic {
+            width: 100%; background-color: #8e44ad; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s, transform 0.2s; margin-top: 10px;
+        }
+        .btn-magic:hover { background-color: #732d91; transform: translateY(-2px); }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #7f8c8d; text-decoration: none; font-weight: bold; }
+        .or-divider { text-align: center; margin: 20px 0; color: #bdc3c7; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>✨ AI Flashcard Generator</h1>
+        <p class="subtitle">Upload a PDF or paste your study notes, and our AI will automatically extract the key concepts into flashcards.</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul style="color: #e74c3c; font-weight: bold; text-align: center; list-style: none; padding: 0;">
+            {% for message in messages %}
+              <li>⚠ {{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('generate_ai_cards') }}" method="POST" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label>Target Deck</label>
+                <select name="deck_id" required>
+                    <option value="" disabled selected>Select a deck to save these cards...</option>
+                    {% for deck in decks %}
+                        <option value="{{ deck.id }}">{{ deck.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Option 1: Upload a PDF Document</label>
+                <input type="file" name="pdf_file" accept=".pdf">
+            </div>
+
+            <div class="or-divider">— OR —</div>
+
+            <div class="form-group">
+                <label>Option 2: Paste Raw Notes</label>
+                <textarea name="notes" placeholder="Paste your lecture notes, article text, or concepts here..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-magic">✨ Generate Flashcards</button>
+        </form>
+
+        <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    </div>
+
+</body>
+</html>

@@ -7,17 +7,108 @@
     .study-container { width: 100%; max-width: 600px; text-align: center; }
     .progress-tracker { font-size: 15px; color: var(--desc-color); margin-bottom: 25px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-    .flashcard { background: var(--card-bg); padding: 50px 40px; border-radius: 16px; box-shadow: 0 10px 30px var(--shadow-color); margin-bottom: 40px; min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: transform 0.3s ease; border-top: 6px solid #3498db; }
+
+   .flashcard-scene {
+    perspective: 1000px;
+    width: 100%;
+    max-width: 600px;
+    /* Reduce height slightly to give buttons room */
+    height: 300px;
+    /* Add a solid margin at the bottom to push buttons down */
+    margin: 2rem auto 3rem auto;
+  }
+
+    .flashcard-3d {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        transform-style: preserve-3d;
+    }
+
+    .flashcard-3d.is-flipped {
+        transform: rotateY(180deg);
+    }
+
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px var(--shadow-color);
+        background: var(--card-bg);
+        border-top: 6px solid #3498db;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    /* The back face needs to be pre-rotated */
+    .card-back {
+        transform: rotateY(180deg);
+        border-top: 6px solid #27ae60;
+    }
+
     .flashcard-text { font-size: 26px; color: var(--heading-color); line-height: 1.4; }
 
-    .card-divider { width: 100%; border: 0; border-top: 2px dashed var(--shadow-color); margin: 30px 0; display: none; }
-    .card-back { display: none; color: #27ae60; font-weight: bold; }
-
-    .btn-show { background: #3498db; color: white; border: none; padding: 18px 40px; font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.3s, transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); }
+    /* --- BUTTONS --- */
+    .btn-show { background: #3498db; color: white; border: none; padding: 18px 40px; font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.3s, transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); margin-top: 30px; }
     .btn-show:hover { background: #2980b9; transform: translateY(-2px); }
 
-    .rating-container { display: none; gap: 15px; justify-content: center; flex-wrap: wrap; }
-    .btn-rate { flex: 1; min-width: 120px; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: transform 0.1s, filter 0.2s; box-shadow: 0 4px 10px var(--shadow-color); }
+    .rating-container {
+    display: none;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 600px;
+    margin: 40px auto 0 auto;
+  }
+    .btn-rate {
+    flex: 1;
+    min-width: 100px; /* Reduced slightly so they fit better on mobile */
+    /* Increased top/bottom padding to give the two lines of text room to breathe */
+    padding: 12px 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    transition: transform 0.1s, filter 0.2s;
+    box-shadow: 0 4px 10px var(--shadow-color);
+    /* Add line-height to space out the main word and the sub-text */
+    line-height: 1.4;
+  }
+    /* CUSTOM SCROLLBAR */
+    /* Target the scrollbar itself */
+    .card-face::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    /* The track (the background line the thumb slides on) */
+    .card-face::-webkit-scrollbar-track {
+        background: transparent; /* Keep it invisible so it blends with the card */
+        border-radius: 10px;
+    }
+
+    /* The thumb (the click and drag) */
+    .card-face::-webkit-scrollbar-thumb {
+        background-color: #555;
+        border-radius: 10px;    /* Round the edges */
+        border: 2px solid var(--card-bg); /* Add a border matching the card background to give it "padding" */
+    }
+
+
+    .card-face::-webkit-scrollbar-thumb:hover {
+        background-color: #3498db;
+    }
+
     .btn-rate:hover { filter: brightness(1.1); }
     .btn-rate:active { transform: scale(0.95); }
 
@@ -38,15 +129,22 @@
         Card 1 of {{ total_due }} due today
     </div>
 
-    <div class="flashcard">
-        <div class="flashcard-text" id="front-text">{{ card.front }}</div>
+    <div class="flashcard-scene">
+        <div class="flashcard-3d" id="studyCard">
 
-        <hr class="card-divider" id="divider">
+            <div class="card-face card-front">
+                <h5 style="color: #7f8c8d; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-bottom: 20px;">Question</h5>
+                <div class="flashcard-text">{{ card.front }}</div>
+                <button id="show-answer-btn" class="btn-show" onclick="revealAnswer()">👀 Show Answer</button>
+            </div>
 
-        <div class="flashcard-text card-back" id="back-text">{{ card.back }}</div>
+            <div class="card-face card-back">
+                <h5 style="color: #27ae60; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-bottom: 20px;">Answer</h5>
+                <div class="flashcard-text" style="color: #27ae60; font-weight: bold;">{{ card.back }}</div>
+            </div>
+
+        </div>
     </div>
-
-    <button id="show-answer-btn" class="btn-show" onclick="revealAnswer()">👀 Show Answer</button>
 
     <form action="{{ url_for('rate_card', card_id=card.id) }}" method="POST" id="rating-form" class="rating-container">
         <button type="submit" name="rating" value="0" class="btn-rate rate-again">
@@ -65,12 +163,24 @@
 </div>
 
 <script>
-    // Simple JavaScript to handle the card flip logic without reloading the page
     function revealAnswer() {
+        // 1. Flip the card by adding the CSS class
+        document.getElementById('studyCard').classList.add('is-flipped');
+
+        // 2. Hide the 'Show Answer' button so it can't be clicked again
         document.getElementById('show-answer-btn').style.display = 'none';
-        document.getElementById('divider').style.display = 'block';
-        document.getElementById('back-text').style.display = 'block';
+
+        // 3. Show the rating buttons
         document.getElementById('rating-form').style.display = 'flex';
     }
+
+    // Keyboard Shortcut (Spacebar to flip!)
+    document.addEventListener('keydown', function(event) {
+        // Check if spacebar is pressed and the card hasn't been flipped yet
+        if (event.code === 'Space' && !document.getElementById('studyCard').classList.contains('is-flipped')) {
+            event.preventDefault(); // Prevents the page from scrolling down
+            revealAnswer();
+        }
+    });
 </script>
 {% endblock %}

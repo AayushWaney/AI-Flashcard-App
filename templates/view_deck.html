@@ -50,9 +50,9 @@
         {% endif %}
 
         <div style="margin-top: 15px;">
-            <button onclick="alert('AI Overview feature coming soon!');" style="color: #8e44ad; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: rgba(142, 68, 173, 0.1); padding: 10px 20px; border-radius: 20px; transition: background 0.2s; font-size: 15px; border: none; cursor: pointer;">
+           <a href="{{ url_for('summarize_deck_ai', deck_id=deck.id) }}" style="color: #8e44ad; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: rgba(142, 68, 173, 0.1); padding: 10px 20px; border-radius: 20px; transition: background 0.2s; font-size: 15px;">
                 ✨ Generate AI Overview
-            </button>
+            </a>
         </div>
     </div>
 
@@ -71,9 +71,11 @@
                     </div>
 
                     <div class="card-actions">
-                        <button type="button" onclick="alert('AI Improve feature coming soon!');" style="background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 5px;" title="Make question clearer and answer concise">
-                            ✨ AI Improve
-                        </button>
+                        <form action="{{ url_for('improve_card_ai', card_id=card.id) }}" method="POST" style="margin: 0;">
+                            <button type="submit" style="background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 5px;" title="Make question clearer and answer concise">
+                                ✨ AI Improve
+                            </button>
+                        </form>
 
                         <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn-edit">✏️ Edit</a>
 

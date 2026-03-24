@@ -1,0 +1,45 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads (important if you store PDFs)
+uploads/
+instance/
+
+# SQLite database (if local dev)
+*.db
+
+# Node (if any frontend later)
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Tests (optional)
+tests/
