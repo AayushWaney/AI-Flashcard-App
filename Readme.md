@@ -4,9 +4,7 @@
 ![API](https://img.shields.io/badge/API-Google%20Gemini%20AI-orange)
 ![Docker](https://img.shields.io/badge/Container-Docker-2496ED)
 
-This web application is designed to improve study efficiency by combining algorithmic spaced repetition with AI-driven content generation.
-
-This project explores the intersection of AI-assisted knowledge extraction and algorithmic learning optimization, combining LLM-based content generation with mathematically grounded review scheduling.
+This project improves study efficiency by combining AI-generated flashcards with a spaced repetition algorithm (SM-2).
 
 ---
 
@@ -22,7 +20,7 @@ This project explores the intersection of AI-assisted knowledge extraction and a
 
 One of the key challenges was ensuring reliable structured output from the AI. I designed prompts to enforce strict JSON formatting and implemented validation logic to handle malformed or incomplete responses before saving them to the database. 
 
-On the backend, I used the google-generativeai library to process large inputs such as lecture notes and convert them into structured flashcard data. At the same time, the application uses the SuperMemo-2 (SM-2) algorithm to calculate intervals and ease factors, enabling accurate scheduling of future reviews.
+On the backend, I used the google-generativeai library to process large inputs such as lecture notes and convert them into structured flashcard data. The application also uses the SuperMemo-2 (SM-2) algorithm to calculate intervals and ease factors, enabling accurate scheduling of future reviews.
 
 ---
 
@@ -43,12 +41,12 @@ On the backend, I used the google-generativeai library to process large inputs s
 
 ---
 
-## ⚙️ Advanced Engineering Highlights
+## ⚙️ Engineering Challenges & Solutions
 
-* **Structured LLM Output Enforcement:** Designed prompt templates with strict schema constraints and implemented backend validation to handle malformed or partial AI responses before database injection.
-* **Algorithmic Scheduling System:** Integrated the SM-2 spaced repetition algorithm to dynamically adjust review intervals and ease factors based on user performance.
-* **Efficient Data Modeling:** Designed a relational SQLite database schema (User → Deck → Card) via SQLAlchemy, utilizing optimized time-based queries to only retrieve cards currently due for review.
-* **Scalable API Design:** Built a full suite of RESTful JSON endpoints alongside the frontend to support potential future mobile or external integrations.
+- **Reliable AI Output:** Designed prompts with strict JSON schemas and added backend validation to handle malformed or incomplete responses before saving to the database.
+- **Spaced Repetition Logic:** Implemented the SM-2 algorithm to dynamically update review intervals and ease factors based on user feedback.
+- **Database Design:** Built a relational SQLite schema (User → Deck → Card) using SQLAlchemy, with efficient queries to fetch only due cards.
+- **API Design:** Developed RESTful JSON endpoints to support future mobile or external integrations.
 
 The system is designed for single-user or small-scale deployment, prioritizing correctness, clarity of implementation, and reliability of AI outputs over large-scale production optimization.
 
